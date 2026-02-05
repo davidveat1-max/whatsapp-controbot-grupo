@@ -128,22 +128,4 @@ client.on('message', async msg => {
   }
 
 
-  // ===== COMANDO IA =====
 
-  if (text.startsWith("!ia ")) {
-
-    msg.reply("Pensando...");
-
-    const r = await openai.responses.create({
-      model: "gpt-5-mini",
-      input: text.replace("!ia ","")
-    });
-
-    await new Promise(r => setTimeout(r, humanDelay()));
-
-    msg.reply(r.output_text.slice(0,1500));
-  }
-
-});
-
-client.initialize();
