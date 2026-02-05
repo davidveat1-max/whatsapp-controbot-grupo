@@ -4,15 +4,72 @@ const qrcode = require('qrcode-terminal');
 const client = new Client({
   authStrategy: new LocalAuth(),
   puppeteer: {
-    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH,
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox'
-    ],
-    headless: true
+    args: ['--no-sandbox','--disable-setuid-sandbox']
   }
 });
 
+
+// =======================
+// ADMINS DEL BOT
+// =======================
+const BOT_ADMINS = [
+  "521234567890"
+];
+
+function isBotAdmin(msg){
+  const author = (msg.author || msg.from).replace('@c.us','');
+  return BOT_ADMINS.includes(author);
+}
+
+
+// =======================
+// DELAY ANTI SPAM
+// =======================
+let lastUse = {};
+const DELAY = 3500;
+
+function checkDelay(user){
+  const now = Date.now();
+  if(lastUse[user] && now - lastUse[user] < DELAY){
+    return false;
+  }
+  lastUse[user] = now;
+  return true;
+}
+
+
+// =======================
+// BASE DE RESPUESTAS
+// =======================
+const RESPUESTAS = {
+
+  "!horario": "🕒 Horario: Lun-Vie 8am a 5pm",
+  "!ubicacion": "📍 Dirección: Calle ejemplo 123",
+  "!contacto": "📞 Tel: 555-123-4567",
+  "!correo": "✉ contacto@empresa.com",
+  "!soporte": "🛠 Soporte técnico activo",
+  "!pagos": "💳 Aceptamos transferencia",
+  "!envios": "🚚 Envíos 24-48h",
+  "!garantia": "🧾 Garantía 12 meses",
+  "!requisitos": "📄 INE + comprobante",
+  "!proceso": "⚙ Paso1 → Paso2 → Paso3",
+  "!status": "📦 Usa !folio + número",
+  "!cancelar": "❌ Solicita con soporte",
+  "!actualizacion": "🔄 Sistema activo",
+  "!version": "🤖 Bot v1.0",
+  "!reglas": "📋 Respeto • No spam",
+  "!grupo": "👥 Grupo informativo",
+  "!ayuda2": "ℹ Usa !menu",
+  "!faq": "❓ Preguntas frecuentes",
+  "!docs": "📚 Documentación interna",
+  "!extra": "⭐ Función extra"
+
+};
+
+
+// =======================
+// QR
+// =======================
 client.on('qr', qr => {
   qrcode.generate(qr, { small: true });
 });
@@ -22,99 +79,94 @@ client.on('ready', () => {
 });
 
 
-// ===== DELAY HUMANO =====
+// =======================
+// MENU
+// =======================
+function menu(){
+return `
+╔══════════════════╗
+     🤖 MENU BOT
+╚══════════════════╝
 
-function humanDelay() {
-  return Math.floor(Math.random() * 4000) + 2000;
+📌 GENERALES
+!menu
+!info
+!reglas
+
+📌 CONSULTAS
+!horario
+!ubicacion
+!contacto
+!correo
+!pagos
+!envios
+!garantia
+!requisitos
+!proceso
+!status
+
+📌 SISTEMA
+!version
+!soporte
+!faq
+!docs
+
+📌 ADMIN
+!todos
+
+`;
 }
 
 
-// ===== COOLDOWN =====
-
-const cooldown = new Map();
-const COOLDOWN_MS = 15000;
-
-
-// ===== COMANDOS =====
-
-const comandos = {
-
-"!ayuda": `
-Comandos disponibles:
-!nom059
-!rechazo
-!devolucion
-!bitacora
-!traspaso
-!contacto
-!horario
-!todos
-`,
-
-"!nom059":
-"NOM-059 regula buenas prácticas de fabricación de medicamentos.",
-
-"!rechazo":
-"Se detectó no conformidad durante inspección de producto.",
-
-"!devolucion":
-"Registrar lote, motivo y responsable.",
-
-"!bitacora":
-"La bitácora debe contener fecha, hora, usuario y acción.",
-
-"!traspaso":
-"Validar documento y existencia física.",
-
-"!contacto":
-"Responsable sanitario: ___",
-
-"!horario":
-"Horario L-V 8:00 a 17:00"
-};
-
-
-
-// ===== LISTENER =====
-
+// =======================
+// MENSAJES
+// =======================
 client.on('message', async msg => {
 
-  if (!msg.from.endsWith('@g.us')) return;
+  const text = msg.body.toLowerCase();
+  const user = (msg.author || msg.from);
 
-  const now = Date.now();
-  if (cooldown.has(msg.from)) {
-    if (now - cooldown.get(msg.from) < COOLDOWN_MS) return;
+  if(!checkDelay(user)) return;
+
+  // MENU
+  if(text === "!menu"){
+    msg.reply(menu());
+    return;
   }
-  cooldown.set(msg.from, now);
 
-  const text = msg.body.toLowerCase().trim();
+  // INFO
+  if(text === "!info"){
+    msg.reply("🤖 Bot activo y funcionando");
+    return;
+  }
 
-  await new Promise(r => setTimeout(r, humanDelay()));
+  // RESPUESTAS AUTOMATICAS
+  if(RESPUESTAS[text]){
+    msg.reply(RESPUESTAS[text]);
+    return;
+  }
 
+  // ===================
+  // MENCIONAR A TODOS
+  // ===================
+  if(text === "!todos"){
 
-
-  // ===== !TODOS SOLO ADMIN =====
-
-  if (text === "!todos") {
+    if(!isBotAdmin(msg)){
+      msg.reply("❌ No autorizado");
+      return;
+    }
 
     const chat = await msg.getChat();
-    if (!chat.isGroup) return;
 
-    const author = msg.author || msg.from;
-
-    const isAdmin = chat.participants.find(p =>
-      p.id._serialized === author && p.isAdmin
-    );
-
-    if (!isAdmin) {
-      msg.reply("❌ Solo admins pueden usar !todos");
+    if(!chat.isGroup){
+      msg.reply("⚠ Solo en grupos");
       return;
     }
 
     let mentions = [];
-    let texto = "📢 Aviso para todos:\n";
+    let texto = "📢 Aviso general:\n";
 
-    for (let p of chat.participants) {
+    for (let p of chat.participants){
       mentions.push(p.id._serialized);
       texto += `@${p.id.user} `;
     }
@@ -123,18 +175,8 @@ client.on('message', async msg => {
     return;
   }
 
-
-
-  // ===== COMANDOS NORMALES =====
-
-  if (comandos[text]) {
-    msg.reply(comandos[text]);
-    return;
-  }
-
 });
 
 client.initialize();
-
 
 
