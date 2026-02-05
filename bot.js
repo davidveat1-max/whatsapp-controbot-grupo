@@ -1,10 +1,5 @@
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
-const OpenAI = require('openai');
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_KEY
-});
 
 const client = new Client({
   authStrategy: new LocalAuth()
@@ -37,7 +32,7 @@ const COOLDOWN_MS = 15000;
 const comandos = {
 
 "!ayuda": `
-Comandos:
+Comandos disponibles:
 !nom059
 !rechazo
 !devolucion
@@ -46,7 +41,6 @@ Comandos:
 !contacto
 !horario
 !todos
-!ia pregunta
 `,
 
 "!nom059":
@@ -59,7 +53,7 @@ Comandos:
 "Registrar lote, motivo y responsable.",
 
 "!bitacora":
-"Bitácora debe contener fecha, hora, usuario y acción.",
+"La bitácora debe contener fecha, hora, usuario y acción.",
 
 "!traspaso":
 "Validar documento y existencia física.",
@@ -90,7 +84,8 @@ client.on('message', async msg => {
   await new Promise(r => setTimeout(r, humanDelay()));
 
 
-  // ===== COMANDO !TODOS SOLO ADMIN =====
+
+  // ===== !TODOS SOLO ADMIN =====
 
   if (text === "!todos") {
 
@@ -98,6 +93,7 @@ client.on('message', async msg => {
     if (!chat.isGroup) return;
 
     const author = msg.author || msg.from;
+
     const isAdmin = chat.participants.find(p =>
       p.id._serialized === author && p.isAdmin
     );
@@ -120,12 +116,17 @@ client.on('message', async msg => {
   }
 
 
-  // ===== COMANDOS FIJOS =====
+
+  // ===== COMANDOS NORMALES =====
 
   if (comandos[text]) {
     msg.reply(comandos[text]);
     return;
   }
+
+});
+
+client.initialize();
 
 
 
