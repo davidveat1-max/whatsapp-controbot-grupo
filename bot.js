@@ -13,7 +13,7 @@ const client = new Client({
 // ADMINS DEL BOT
 // =======================
 const BOT_ADMINS = [
-  "521234567890"
+  "522461742341"
 ];
 
 function isBotAdmin(msg){
