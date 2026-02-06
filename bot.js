@@ -43,7 +43,7 @@ function checkDelay(user){
 // =======================
 const RESPUESTAS = {
 
-  "!horario": "🕒 Horario: Lun-Vie 8am a 5pm",
+  "!horario": "🕒 AVENIDA INDUSTRIAL MILITAR NO. 1088, LOMAS DE SAN ISIDRO",
   "!ubicacion": "📍 Dirección: Calle ejemplo 123",
   "!contacto": "📞 Tel: 555-123-4567",
   "!correo": "✉ contacto@empresa.com",
